@@ -1,0 +1,5 @@
+# Maven build output
+target/
+
+# Sales log written by the GUI once a sale is processed
+data.txt
