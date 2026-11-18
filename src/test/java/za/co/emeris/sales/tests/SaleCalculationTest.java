@@ -1,6 +1,7 @@
 package za.co.emeris.sales.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 import za.co.emeris.sales.ProductCalculations;
@@ -26,8 +27,20 @@ class SaleCalculationTest {
     }
 
     @Test
+    void GetCommission_WithValidData_ReturnsCorrectValue() {
+        assertEquals(175.0, calculation.GetCommission(), 0.001,
+                "5% of 3500 is 175.0.");
+    }
+
+    @Test
     void GetTotal_WithValidData_ReturnsCorrectValue() {
         assertEquals(4200.0, calculation.GetTotal(), 0.001,
                 "3500 plus 525 VAT plus 175 commission is 4200.0.");
+    }
+
+    @Test
+    void CreateCalculations_WithNegativePrice_ThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> new ProductCalculations(-3500),
+                "A negative price must be rejected.");
     }
 }
