@@ -1,116 +1,169 @@
 package za.co.emeris.sales;
 
-import java.util.Arrays;
-import java.util.stream.IntStream;
-
 /**
- * Sales report model for the mattress company (Q.1.2).
+ * The mattress sales report model (Q.1.2).
  *
- * <p>Product names are held in a one-dimensional array, the monthly sales in a
- * two-dimensional array ({@code [product][month]}) and the total sales of each
- * product in a second one-dimensional array that is worked out once in the
- * constructor.</p>
+ * <p>Data design: the three product names are held in a single-dimensional
+ * array, the monthly figures in a two-dimensional array indexed
+ * {@code [product][month]}, and a second single-dimensional array holds the
+ * three-month total of every product. The totals are added up once in the
+ * constructor so no figure is summed twice (efficient code).</p>
  *
  * @author Lieshan Valliadum (ST10439494)
  */
 public class Product implements IProduct {
 
-    /** Every product in the report has three months of sales. */
+    /** Every product reports on the same three months. */
     public static final int MONTHS = 3;
 
-    private final String[] names;
+    /** Product names, one per product (single-dimensional array). */
+    private final String[] productNames;
+
+    /** Sales figures per product per month (two-dimensional array). */
     private final int[][] monthlySales;
-    private final int[] productTotals;
+
+    /** Three-month total of each product (single-dimensional array). */
+    private final int[] salesPerProduct;
 
     /**
-     * @param names        the product names, one per product
-     * @param monthlySales the three monthly sales figures of each product
+     * @param productNames the three product names, in the order of the report
+     * @param monthlySales the three monthly figures of each product
+     * @throws IllegalArgumentException when the arrays are missing, the rows do
+     *                                  not hold exactly three months, or a
+     *                                  figure is negative
      */
-    public Product(String[] names, int[][] monthlySales) {
-        validate(names, monthlySales);
-
-        this.names = Arrays.copyOf(names, names.length);
-        this.monthlySales = new int[monthlySales.length][MONTHS];
-        for (int row = 0; row < monthlySales.length; row++) {
-            this.monthlySales[row] = Arrays.copyOf(monthlySales[row], MONTHS);
-        }
-        this.productTotals = buildProductTotals();
+    public Product(String[] productNames, int[][] monthlySales) {
+        checkShape(productNames, monthlySales);
+        this.productNames = copyNames(productNames);
+        this.monthlySales = copySales(monthlySales);
+        this.salesPerProduct = totalEachProduct();
     }
 
     /**
-     * Rejects report data that cannot produce a meaningful report.
+     * Rejects data that cannot produce the report.
      */
-    private static void validate(String[] names, int[][] monthlySales) {
-        if (names == null || monthlySales == null) {
-            throw new IllegalArgumentException("The report needs product names and monthly sales.");
+    private static void checkShape(String[] names, int[][] sales) {
+        if (names == null || sales == null) {
+            throw new IllegalArgumentException("Product names and monthly sales are both required.");
         }
-        if (names.length == 0 || names.length != monthlySales.length) {
-            throw new IllegalArgumentException("Each product needs exactly one row of monthly sales.");
+        if (names.length == 0) {
+            throw new IllegalArgumentException("The report needs at least one product.");
         }
-        for (int row = 0; row < names.length; row++) {
-            if (names[row] == null || names[row].trim().isEmpty()) {
-                throw new IllegalArgumentException("The product name at position " + row + " is missing.");
+        if (names.length != sales.length) {
+            throw new IllegalArgumentException("Each product name needs one row of monthly sales.");
+        }
+    }
+
+    /**
+     * Copies the names so later changes to the caller's array cannot alter the
+     * report, and refuses a name that is missing.
+     */
+    private static String[] copyNames(String[] names) {
+        String[] copy = new String[names.length];
+        for (int product = 0; product < names.length; product++) {
+            if (names[product] == null || names[product].trim().isEmpty()) {
+                throw new IllegalArgumentException("The product at position " + product + " has no name.");
             }
-            if (monthlySales[row] == null || monthlySales[row].length != MONTHS) {
-                throw new IllegalArgumentException(names[row] + " needs sales for " + MONTHS + " months.");
+            copy[product] = names[product];
+        }
+        return copy;
+    }
+
+    /**
+     * Copies the two-dimensional sales array, checking every row on the way.
+     */
+    private static int[][] copySales(int[][] sales) {
+        int[][] copy = new int[sales.length][MONTHS];
+        for (int product = 0; product < sales.length; product++) {
+            int[] row = sales[product];
+            if (row == null || row.length != MONTHS) {
+                throw new IllegalArgumentException(
+                        "Each product needs exactly " + MONTHS + " monthly figures.");
             }
-            for (int figure : monthlySales[row]) {
-                if (figure < 0) {
-                    throw new IllegalArgumentException("Sales may not be negative.");
+            for (int month = 0; month < MONTHS; month++) {
+                if (row[month] < 0) {
+                    throw new IllegalArgumentException("Sales figures may not be negative.");
                 }
+                copy[product][month] = row[month];
             }
         }
+        return copy;
     }
 
     /**
-     * Adds up the monthly figures of every product once.
+     * Adds up the three months of every product.
      *
-     * @return the total sales per product
+     * @return the three-month total of each product
      */
-    private int[] buildProductTotals() {
+    private int[] totalEachProduct() {
         int[] totals = new int[monthlySales.length];
-        for (int row = 0; row < monthlySales.length; row++) {
-            totals[row] = IntStream.of(monthlySales[row]).sum();
+        for (int product = 0; product < monthlySales.length; product++) {
+            int total = 0;
+            for (int month = 0; month < MONTHS; month++) {
+                total += monthlySales[product][month];
+            }
+            totals[product] = total;
         }
         return totals;
     }
 
     @Override
     public int GetTotalProductsSold() {
-        return IntStream.of(productTotals).sum();
+        int total = 0;
+        for (int productTotal : salesPerProduct) {
+            total += productTotal;
+        }
+        return total;
     }
 
     @Override
     public double GetAverageProductSold() {
-        int figuresInReport = names.length * MONTHS;
+        // Interpretation choice 1 (documented in the README): the sample prints
+        // 17 for a total of 153, which only works when the total is divided by
+        // the nine captured figures and not by the three products (153 / 3 = 51).
+        // The sample report therefore decides this question, not the wording.
+        int figuresInReport = productNames.length * MONTHS;
         return (double) GetTotalProductsSold() / figuresInReport;
     }
 
     @Override
     public String GetMostPopularProduct() {
-        return names[positionOfBestSeller()];
+        return productNames[bestSeller()];
     }
 
     /**
-     * @return the total sales of the most popular product
+     * The figure the 2026 sample report prints after the most popular product.
+     *
+     * <p>Interpretation choice 2 (documented in the README): the sample shows
+     * {@code Cozy Nights Monarch(25)} for the figures 25, 18 and 20. That is the
+     * best seller's first month, not its three-month total of 63, so the sample
+     * is followed exactly and this method keeps the decision in one place.</p>
+     *
+     * @return the first month's figure of the most popular product
+     */
+    public int GetMostPopularProductSales() {
+        return monthlySales[bestSeller()][0];
+    }
+
+    /**
+     * @return the three-month total of the most popular product
      */
     public int GetBestSellerSales() {
-        return productTotals[positionOfBestSeller()];
+        return salesPerProduct[bestSeller()];
     }
 
     /**
-     * Finds the position of the product with the largest total.
+     * Finds the product whose three months add up to the highest figure.
      *
-     * @return index into the product arrays
+     * @return the position of that product in the arrays
      */
-    private int positionOfBestSeller() {
+    private int bestSeller() {
         int best = 0;
-        for (int row = 1; row < productTotals.length; row++) {
-            if (productTotals[row] > productTotals[best]) {
-                best = row;
+        for (int product = 1; product < salesPerProduct.length; product++) {
+            if (salesPerProduct[product] > salesPerProduct[best]) {
+                best = product;
             }
         }
         return best;
     }
-
 }
