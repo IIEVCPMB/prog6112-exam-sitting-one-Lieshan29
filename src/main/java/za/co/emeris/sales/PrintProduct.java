@@ -28,4 +28,35 @@ public class PrintProduct {
     public void PrintHeading() {
         System.out.printf("%nPRODUCT SALES REPORT - 2026%n%n%s%n", RULE);
     }
+
+    /**
+     * Prints the total number of products sold.
+     */
+    public void PrintTotalProductSales() {
+        System.out.printf("TOTAL PRODUCT SALES: %d%n", report.GetTotalProductsSold());
+    }
+
+    /**
+     * Prints the average number of products sold.
+     */
+    public void PrintAverageProductSales() {
+        System.out.printf("AVERAGE PRODUCT SALES: %.0f%n", report.GetAverageProductSold());
+    }
+
+    /**
+     * Prints the most popular product with its total sales.
+     */
+    public void PrintMostPopularProduct() {
+        System.out.printf("MOST POPULAR PRODUCT: %s(%d)%n",
+                report.GetMostPopularProduct(), report.GetBestSellerSales());
+    }
+
+    /**
+     * Prints all three report figures.
+     */
+    public void PrintWholeReport() {
+        PrintTotalProductSales();
+        PrintAverageProductSales();
+        PrintMostPopularProduct();
+    }
 }
