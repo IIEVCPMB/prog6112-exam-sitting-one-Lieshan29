@@ -1,6 +1,7 @@
 package za.co.emeris.sales;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,5 +35,10 @@ class SaleCalculationTest {
         double expectedTotal = 3000.0; // 2500 + 375 + 125
         assertEquals(expectedTotal, calculation.GetTotal(), 0.001,
                 "The total sale amount is wrong.");
+    }
+
+    @Test
+    void CreateCalculations_WithNegativePrice_ThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> new ProductCalculations(-250));
     }
 }
