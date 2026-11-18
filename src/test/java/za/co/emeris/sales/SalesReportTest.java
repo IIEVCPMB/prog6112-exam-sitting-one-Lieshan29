@@ -1,6 +1,7 @@
 package za.co.emeris.sales;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,5 +44,20 @@ class SalesReportTest {
         double expectedAverage = 19.0; // 171 / 9 figures
         assertEquals(expectedAverage, report.GetAverageProductSold(), 0.001,
                 "The average products sold was calculated incorrectly.");
+    }
+
+    @Test
+    void GetMostPopularProduct_WithValidData_ReturnsBestSeller() {
+        assertEquals("Cozy Nights Monarch", report.GetMostPopularProduct(),
+                "The most popular product was identified incorrectly.");
+        assertEquals(75, report.GetBestSellerSales(),
+                "The sales of the most popular product are incorrect.");
+    }
+
+    @Test
+    void CreateProduct_WithIncompleteMonths_ThrowsException() {
+        int[][] incompleteSales = {{5, 6, 7}, {8, 9}};
+        assertThrows(IllegalArgumentException.class,
+                () -> new Product(new String[]{"First product", "Second product"}, incompleteSales));
     }
 }
